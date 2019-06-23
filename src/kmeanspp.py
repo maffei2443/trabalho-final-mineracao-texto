@@ -12,6 +12,9 @@ def sorteio(probab_vet):
   return np.nonzero( accumulated_probab >= choosed )[0][0]
 
 def sorteio_opt(probab_vet):
+  """Retorna um número no intervalo [0, 1) sorteado a partir
+  de uma distribuição de probabilidade uniforme.
+  """
   return np.nonzero(
     np.add.accumulate(probab_vet) >= rand()
   )[0][0]
@@ -22,27 +25,28 @@ class KMeansPP:
     self.k = k
     self._data = data
     self._dataLen = dataLen = len(data)
-    self._centroidsIndex = np.empty( k, dtype=np.uint16 )
+    self._centroidsIndex = np.zeros( k, dtype=np.uint16 )
     self._computedCentroids = 0
     self._probab = np.full( (k, dataLen), -np.inf )
     self._minDistanceToNearestCentroid = np.full( (1, dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
   def __reset(self, k, data):
     self.__init__(k, data)    
   def __computeAndSetFirstCentroid(self):
-    print("__computeAndSetFirstCentroid")
+    # print("__computeAndSetFirstCentroid")
     """Sorteia um número no inervalo [0, tamanho(vetor_de_dados) e seta o primeiro centróide para tal.
     
     Como efeito colateral, altera o contador de centróides computados, bem como
     modifica os arrays de índices de centróides e de centróides.
     """
-    index = randint(self._dataLen)
-    print("First Centroid: ", index)
-    self._centroidsIndex[0] = index
+    # index = randint(self._dataLen)
+    # print("First Centroid: ", index)
+    self._centroidsIndex[0] = randint(self._dataLen)
     self._computedCentroids += 1
 
   def __computeNextCentroid(self):
-    print("__computeNextCentroid")
-    """Computes distances from all points to last centroid"""
+    # print("__computeNextCentroid")
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    # print("LastIndex: ", self._centroidsIndex[self._computedCentroids-1])
     self._minDistanceToNearestCentroid = np.minimum(
       self._minDistanceToNearestCentroid,
       LA.norm(
@@ -52,8 +56,9 @@ class KMeansPP:
     )
     self._probab[self._computedCentroids] = self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid)
     nextClusterIndex = sorteio_opt(self._probab[self._computedCentroids])
-    while nextClusterIndex in self._centroidsIndex:  # Garante que n terá dois centroides sobrepostos
-      nextClusterIndex = sorteio_opt(self._probab[self._computedCentroids])
+    # nextClusterIndex = sorteio_opt( self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid) )  # Por algum motivo, n funciona direto assim.
+    # while nextClusterIndex in self._centroidsIndex:  # Garante que n terá dois centroides sobrepostos. Questões de precisão do float
+    #   nextClusterIndex = sorteio_opt(self._probab[self._computedCentroids])
     self._computedCentroids += 1
     return nextClusterIndex
 
@@ -64,8 +69,7 @@ class KMeansPP:
     self.__computeAndSetFirstCentroid()
     # Generate the others centroids
     for idx in range(1,self.k):
-      pos = self.__computeNextCentroid()
-      self._centroidsIndex[idx] = pos
+      self._centroidsIndex[idx] = self.__computeNextCentroid()
 
   def fit(self):
     self.__InitCentroids()
