@@ -2,6 +2,7 @@ from nltk.corpus import stopwords       # lista stopwords
 import unicodedata      # Remocao de acentos
 import string
 from nltk.stem.porter import *  # porterStemmer
+
 def ToLowerCase(text):
     return text.lower()
 
@@ -35,9 +36,9 @@ def RemoveAllButAscii(text):
     return KeepOnlySome(text, some=string.ascii_letters)
 def RemoveAllButAsciiLower(text):
     return KeepOnlySome(text, some=string.ascii_lowercase)
-def Stemmize(text):
-    stm = PorterStemmer()
-    return ' '.join(stm.stem(c) for c in text.split())
+_stm = PorterStemmer()
+def StemmizePorter(text):
+    return ' '.join(_stm.stem(c) for c in text.split())
 
 # Passos para limpeza de texto:
 # 1 - Deixar tudo minusculo
@@ -48,10 +49,9 @@ def Stemmize(text):
 engStopWords = stopwords.words("english")
 
 def pre_process_lower(text):
-    text = ToLowerCase(text);    print("===> ", text)
-    text = StripAccents(text);    print("===> ", text)
-    text = StripAccents(text);    print("===> ", text)
-    text = RemoveAllButAsciiLower(text);    print("===> ", text)
+    text = ToLowerCase(text);    print("==lower==> ", text)
+    text = StripAccents(text);    print("==no_accents==> ", text)
+    text = RemoveAllButAsciiLower(text);    print("==only_ascii==> ", text)
     text = ' '.join( RemoveStopWords( text, engStopWords ))
     return text
 
@@ -59,6 +59,5 @@ def main():
     textRaw = "Some people arén'T the best ones to ask for an advice"
     text = pre_process_lower(textRaw)
     print(text)
-    print(Stemmize(text))
 if __name__ == '__main__':
     main()
