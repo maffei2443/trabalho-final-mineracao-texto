@@ -27,7 +27,17 @@ class KMeansPP:
     self._computedCentroids = 0
     self._probab = np.full( (k, dataLen), -np.inf )
     self._distanceToCentroid = np.full( (k, dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
-  def _computeAndSetFirstCentroid(self):
+  def __reset(self, k, data):
+    self.k = k
+    self._data = data
+    self._dataLen = dataLen= len(data)
+    self._centroidsIndex = np.empty( k, dtype=np.uint16 )
+    self._centroids = np.empty( dataLen, dtype=(np.float64, len(self._data[0])))
+    self._computedCentroids = 0
+    self._probab = np.full( (k, dataLen), -np.inf )
+    self._distanceToCentroid = np.full( (k, dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
+    
+  def __computeAndSetFirstCentroid(self):
     """Sorteia um número no inervalo [0, tamanho(vetor_de_dados) e seta o primeiro centróide para tal.
     
     Como efeito colateral, altera o contador de centróides computados, bem como
@@ -38,18 +48,7 @@ class KMeansPP:
     self._centroids[0] = self._data[index]
     self._computedCentroids += 1
 
-  def InitCentroids(self):
-    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
-    """
-    if not self._computedCentroids:
-      self._computeAndSetFirstCentroid()
-      # Generate the others centroids
-      for idx in range(1,self.k):
-        pos = self.computeNextCentroid()
-        self._centroidsIndex[idx] = pos
-        self._centroids[pos] = self._data[pos]
-
-  def computeNextCentroid(self):
+  def __computeNextCentroid(self):
     """Computes distances from all points to last centroid"""
     self._distanceToCentroid[self._computedCentroids-1] = LA.norm(
       self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
@@ -62,3 +61,18 @@ class KMeansPP:
       nextClusterIndex = sorteio_opt(self._probab)
     self._computedCentroids += 1
     return nextClusterIndex
+
+  def __InitCentroids(self):
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for idx in range(1,self.k):
+      pos = self.__computeNextCentroid()
+      self._centroidsIndex[idx] = pos
+      self._centroids[pos] = self._data[pos]
+
+  def fit(self):
+    self.__InitCentroids()
+  def getCentroids(self):
+    return self._centroids
