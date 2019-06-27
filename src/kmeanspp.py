@@ -5,6 +5,10 @@ from numpy.random import randint
 from itertools import accumulate
 from numpy import linalg as LA  # norma vetor
 
+# Add suporte à matriz esparsa como inicialização dos dados
+import scipy
+# # # # # # #
+
 def sorteio(probab_vet):
   choosed = rand()
   print("Rand: ", choosed)
@@ -25,8 +29,13 @@ def sorteio_opt(probab_vet):
 class KMeansPP:
   def __init__(self, k, data):
     self.k = k
-    self._data = data
-    self._dataLen = dataLen = len(data)
+    self.isSparseCsr = isinstance(data, scipy.sparse.csr.csr_matrix)
+    if self.isSparseCsr:
+      self._data = scipy.sparse.csr.csr_matrix.toarray(data)
+      self._dataLen = dataLen = data.shape[0]
+    else:
+      self._data = data
+      self._dataLen = dataLen = len(data)
     self._centroidsIndex = np.zeros( k, dtype=np.uint16 )
     self._computedCentroids = 0
     self._probab = np.full( (k, dataLen), -np.inf )
@@ -73,6 +82,26 @@ class KMeansPP:
     self._computedCentroids += 1
     return nextClusterIndex
 
+  def __computeNextCentroidSparseData(self):
+    # print("__computeNextCentroidSparseData")
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    self.__distDebug()
+    self._minDistanceToNearestCentroid = np.minimum(
+      self._minDistanceToNearestCentroid,
+      LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      )
+    )
+    # self._probab[self._computedCentroids] = (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))
+    # nextClusterIndex = sorteio_opt( self._probab[self._computedCentroids] )
+    nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    # nextClusterIndex = sorteio_opt( self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid) )  # Por algum motivo, n funciona direto assim.
+    # while nextClusterIndex in self._centroidsIndex:  # Garante que n terá dois centroides sobrepostos. Questões de precisão do float
+    #   nextClusterIndex = sorteio_opt(self._probab[self._computedCentroids])
+    self._computedCentroids += 1
+    return nextClusterIndex
+
   def __InitCentroids(self):
     # print("__InitCentroids")
     """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
@@ -82,8 +111,20 @@ class KMeansPP:
     for idx in range(1,self.k):
       self._centroidsIndex[idx] = self.__computeNextCentroid()
 
+  def __InitCentroidsSparseData(self):
+    # print("__InitCentroids")
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for idx in range(1,self.k):
+      self._centroidsIndex[idx] = self.__computeNextCentroidSparseData()
+
   def fit(self):
-    self.__InitCentroids()
+    if not self.isSparseCsr:
+      self.__InitCentroids()
+    else:
+      self.__InitCentroidsSparseData()
   def getCentroids(self):
     return np.array([ self._data[i] for i in self._centroidsIndex ])
 
