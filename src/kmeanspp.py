@@ -58,7 +58,7 @@ class KMeansPP:
     self._centroidsIndex[0] = randint(self._dataLen)
     self._computedCentroids += 1
 
-  def __computeNextCentroidIndex(self):
+  def __computeAndSetNextCentroidIndex(self):
     """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
     self._minDistanceToNearestCentroid = np.minimum(
       self._minDistanceToNearestCentroid,
@@ -70,7 +70,6 @@ class KMeansPP:
     nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
     self._centroidsIndex[self._computedCentroids] = nextClusterIndex
     self._computedCentroids += 1
-    return nextClusterIndex
 
   def __InitCentroids(self):
     # print("__InitCentroids")
@@ -78,8 +77,8 @@ class KMeansPP:
     """
     self.__computeAndSetFirstCentroid()
     # Generate the others centroids
-    for idx in range(1,self.k):
-      self._centroidsIndex[idx] = self.__computeNextCentroidIndex()
+    for _ in range(1,self.k):
+      self.__computeAndSetNextCentroidIndex()
 
   def fit(self):
     self.__InitCentroids()
