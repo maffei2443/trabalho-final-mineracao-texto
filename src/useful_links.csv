@@ -4,4 +4,7 @@ np.array ; implementar classe do KMeansPP © https://docs.scipy.org/doc/numpy/re
 scipy.sparse.linalg.norm ; computar norma no KMeansPP no caso de dados demais © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.norm.html
 numpy.frompyfunc; implementar a função <vectorized_sub> © https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.frompyfunc.html#numpy.frompyfunc
 numpy.ndarray ; utilizado em tentativas falhas de implementar a idéia original de subtração de matrizes esparsa © https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.ndarray.html
+scipy.sparse.csr_matrix; matriz retornada pelo Tfidf por padrão, e utilizada para a aritmética entre matrizes para computação dos centros iniciais do KMeansPP © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html#scipy.sparse.csr_matrix
+
+sklearn.feature_extraction.text.CountVectorizer; para classificação dos textos levando em conta a quantidade de palavras por documento apenas © https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html#examples-using-sklearn-feature-extraction-text-countvectorizer
 
