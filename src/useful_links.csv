@@ -1,10 +1,20 @@
 motivo © link
+numpy; código fonte © https://github.com/numpy/numpy
 np.arrange; implementar idéia original © https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.arange.html
 np.array ; implementar classe do KMeansPP © https://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html
 scipy.sparse.linalg.norm ; computar norma no KMeansPP no caso de dados demais © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.norm.html
 numpy.frompyfunc; implementar a função <vectorized_sub> © https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.frompyfunc.html#numpy.frompyfunc
+numpy.vectorize; ideia inicial para implementar <vectorized_sub> © https://docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html#numpy.vectorize
 numpy.ndarray ; utilizado em tentativas falhas de implementar a idéia original de subtração de matrizes esparsa © https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.ndarray.html
 scipy.sparse.csr_matrix; matriz retornada pelo Tfidf por padrão, e utilizada para a aritmética entre matrizes para computação dos centros iniciais do KMeansPP © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html#scipy.sparse.csr_matrix
-
+scipy.sparse.csc_matrix; matriz esparsa que poderia ter sido utilizada © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html#scipy.sparse.csc_matrix
+scipy.sparse.lil_matrix; matriz esparsa utilizada em uma das funções do módulo util para subtração rápida de matrizes esparsa © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.lil_matrix.html
+scipy.sparse.dok_matrix; matriz esparsa que poderia ter sido utilizada © https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.sparse.dok_matrix.html
+scipy.sparse.coo_matrix; matriz esparsa que poderia ter sido utilizada © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.coo_matrix.html
+scipy.sparse.bsr_matrix; matriz esparsa que poderia ter sido utilizada © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix
+np.vectorize VS np.frompyfunc; © https://stackoverflow.com/questions/6768245/difference-between-frompyfunc-and-vectorize-in-numpy
 sklearn.feature_extraction.text.CountVectorizer; para classificação dos textos levando em conta a quantidade de palavras por documento apenas © https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html#examples-using-sklearn-feature-extraction-text-countvectorizer
+
+time; benchmark de tempo (menos preciso) © https://docs.python.org/3/library/time.html
+timeit; benchmark de tempo © https://docs.python.org/3.7/library/timeit.html
 
