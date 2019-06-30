@@ -1,6 +1,6 @@
 motivo © link
 numpy; código fonte © https://github.com/numpy/numpy
-np.arrange; implementar idéia original © https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.arange.html
+np.arange; implementar idéia original © https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.arange.html
 np.array ; implementar classe do KMeansPP © https://docs.scipy.org/doc/numpy/reference/generated/numpy.array.html
 scipy.sparse.linalg.norm ; computar norma no KMeansPP no caso de dados demais © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.norm.html
 numpy.frompyfunc; implementar a função <vectorized_sub> © https://docs.scipy.org/doc/numpy-1.15.0/reference/generated/numpy.frompyfunc.html#numpy.frompyfunc

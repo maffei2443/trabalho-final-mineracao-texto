@@ -77,10 +77,11 @@ class KMeansPP:
 
   def __computeAndSetNextCentroidIndex(self):
     """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    lastIndex = self._centroidsIndex[self._computedCentroids-1]
     self._minDistanceToNearestCentroid = np.minimum(
       self._minDistanceToNearestCentroid,
       LA.norm(
-        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        self._data - self._data[lastIndex],
         axis = 1
       )
     )
