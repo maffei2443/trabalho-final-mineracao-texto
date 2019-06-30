@@ -7,6 +7,8 @@ from numpy import linalg as LA  # norma vetor
 
 # Add suporte à matriz esparsa como inicialização dos dados
 import scipy
+from scipy.sparse import csr_matrix
+from scipy.sparse import issparse
 # # # # # # #
 
 def sorteio(probab_vet):
@@ -26,9 +28,13 @@ def sorteio_opt(probab_vet):
 
 # TODO : deixar apenas um vetor que representa Dx, atualizando
 class KMeansPP:
-  def __init__(self, k, data: scipy.sparse.csr.csr_matrix):
+  """Classe para calcular centróides iniciais do utilizados
+  pelo algoritmo kmeans++.
+
+  """
+  def __init__(self, k, data: csr_matrix):
     self.k = k
-    if isinstance(data, scipy.sparse.csr.csr_matrix):
+    if issparse(data) or isinstance(data, np.ndarray):
       try:  # Sempre que pssível, usar arrays pois são absurdamente mas rápidos para operar sobre
         self._data = data.toarray()
         self.isSparse = False
@@ -36,10 +42,15 @@ class KMeansPP:
         self._data = data
         self.isSparse = True
       self._dataLen = dataLen = data.shape[0]
-
-    else:
+    elif isinstance(data, list) or isinstance(data, tuple):
       self._data = np.array(data)
       self._dataLen = dataLen = len(data)
+      self.isSparse = False
+    else:
+      raise TypeError("""The 'data' argument must be one of the following wypes:
+      <scipy_sparse_matrix>, np.ndarray, list os tuple""")
+    if not 0 < self.k <= self._dataLen:
+      raise ValueError("The 'k' number of centers must be in the range [1, data_sample]")
     self._centroidsIndex = np.zeros( k, dtype=np.uint16 )
     self._computedCentroids = 0
     self._probab = np.full( (k, dataLen), -np.inf )
