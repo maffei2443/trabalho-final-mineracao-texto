@@ -29,11 +29,17 @@ class KMeansPP:
   def __init__(self, k, data: scipy.sparse.csr.csr_matrix):
     self.k = k
     if isinstance(data, scipy.sparse.csr.csr_matrix):
-      self._data = data.toarray()
+      try:  # Sempre que pssível, usar arrays pois são absurdamente mas rápidos para operar sobre
+        self._data = data.toarray()
+        self.isSparse = False
+      except BaseException:
+        self._data = data
+        self.isSparse = True
       self._dataLen = dataLen = data.shape[0]
+
     else:
-      self._dataLen = dataLen = len(data)
       self._data = np.array(data)
+      self._dataLen = dataLen = len(data)
     self._centroidsIndex = np.zeros( k, dtype=np.uint16 )
     self._computedCentroids = 0
     self._probab = np.full( (k, dataLen), -np.inf )
@@ -70,6 +76,18 @@ class KMeansPP:
     nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
     self._centroidsIndex[self._computedCentroids] = nextClusterIndex
     self._computedCentroids += 1
+  def __computeAndSetNextCentroidIndex_Sparse(self):
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    self._minDistanceToNearestCentroid = np.minimum(
+      self._minDistanceToNearestCentroid,
+      LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      )
+    )
+    nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    self._centroidsIndex[self._computedCentroids] = nextClusterIndex
+    self._computedCentroids += 1
 
   def __InitCentroids(self):
     # print("__InitCentroids")
@@ -79,9 +97,20 @@ class KMeansPP:
     # Generate the others centroids
     for _ in range(1,self.k):
       self.__computeAndSetNextCentroidIndex()
+  def __InitCentroids_Sparse(self):
+    # print("__InitCentroids")
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for _ in range(1,self.k):
+      self.__computeAndSetNextCentroidIndex_Sparse()
 
   def fit(self):
-    self.__InitCentroids()
+    if not self.isSparse:
+      self.__InitCentroids()
+    else:
+      self.__InitCentroids_Sparse()
 
   def getCentroids(self):
     return np.array([ self._data[i] for i in self._centroidsIndex ])

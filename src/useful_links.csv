@@ -14,6 +14,7 @@ scipy.sparse.coo_matrix; matriz esparsa que poderia ter sido utilizada © https:
 scipy.sparse.bsr_matrix; matriz esparsa que poderia ter sido utilizada © https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.bsr_matrix.html#scipy.sparse.bsr_matrix
 np.vectorize VS np.frompyfunc; © https://stackoverflow.com/questions/6768245/difference-between-frompyfunc-and-vectorize-in-numpy
 sklearn.feature_extraction.text.CountVectorizer; para classificação dos textos levando em conta a quantidade de palavras por documento apenas © https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html#examples-using-sklearn-feature-extraction-text-countvectorizer
+pickle; serialização dos resultado. Não usado. © https://docs.python.org/3/library/pickle.html#pickle.dumps
 
 time; benchmark de tempo (menos preciso) © https://docs.python.org/3/library/time.html
 timeit; benchmark de tempo © https://docs.python.org/3.7/library/timeit.html
