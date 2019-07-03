@@ -10,21 +10,90 @@ import scipy
 from scipy.sparse import csr_matrix
 from scipy.sparse import issparse
 # # # # # # #
+from time import time
+import pickle
+# def sorteio(probab_vet):
+#   choosed = rand()
+#   print("Rand: ", choosed)
+#   accumulated_probab = np.add.accumulate(probab_vet)
+#   print("accumulated: ", accumulated_probab)
+#   return np.nonzero( accumulated_probab >= choosed )[0][0]
 
-def sorteio(probab_vet):
-  choosed = rand()
-  print("Rand: ", choosed)
-  accumulated_probab = np.add.accumulate(probab_vet)
-  print("accumulated: ", accumulated_probab)
-  return np.nonzero( accumulated_probab >= choosed )[0][0]
+# def sorteio_opt(probab_vet):
+#   """Retorna um índice no intervalo [0, len(probab_vet) ),
+#   a partir do sorteio baseado em probabilidade acumulada (soma de prefixo).
+#   """
+#   return np.nonzero(
+#     np.add.accumulate(probab_vet) >= rand()
+#   )[0][0]
+
+# def sorteio_opt(probab_vet):
+#   """Retorna um índice no intervalo [0, len(probab_vet) ),
+#   a partir do sorteio baseado em probabilidade acumulada (soma de prefixo).
+#   """
+#   # return randint(0, 200)
+#   prefix_sum = np.add.accumulate(probab_vet)
+#   min_idx = np.searchsorted(prefix_sum, 1.0)
+#   print(prefix_sum)
+#   return randint(min_idx, len(probab_vet)+1)
 
 def sorteio_opt(probab_vet):
-  """Retorna um índice no intervalo [0, len(probab_vet) ),
-  a partir do sorteio baseado em probabilidade acumulada (soma de prefixo).
-  """
-  return np.nonzero(
-    np.add.accumulate(probab_vet) >= rand()
-  )[0][0]
+  return  np.searchsorted(
+        np.add.accumulate(probab_vet), rand() # Com 1.0, por conta de erro de precisao, muitas vezes dava erro
+      )
+
+def probab_choice(probab_vet, granularity = 1_000_000_000):
+  probab_int = (np.asarray(probab_vet) * granularity).astype(int)
+  mapa = np.dstack( (probab_int, range(len(probab_int))) )[0]
+  np.random.shuffle(mapa)
+  return (
+    probab_int[mapa[(np
+      .searchsorted( 
+        np.cumsum(mapa[:, 0]) , randint(0, granularity)
+      ) % len(probab_int))][1] ]
+  )
+
+mu, sigma = 0, 0.5 
+s = np.random.normal(mu, sigma, 1000000) 
+
+def theHellSorteio(probab_vet):
+  i = s[randint(len(probab_vet))]
+  if i < 0:
+    i = -i
+  if i > 1:
+    i -= 1
+  return np.searchsorted(
+        np.add.accumulate(probab_vet), i # Com 1.0, por conta de erro de precisao, muitas vezes dava erro
+      )
+
+def simple_sub_rev(data, idx = 0):
+    return [*data] - np.array([data[idx]])
+
+normSparseMatrix = lambda x: np.linalg.norm(x.data)
+normSparseMatrixRight = lambda x: scipy.sparse.linalg.norm(x)
+
+vect_normSparseMatrix = np.frompyfunc(normSparseMatrixRight, 1, 1)
+vect_normSparseMatrixRight = np.frompyfunc(normSparseMatrix, 1, 1)
+
+def getNormsOfSparseMatrixInsideArray(arr):
+  return vect_normSparseMatrix(arr)
+
+def getNormsOfSparseMatrixInsideArrayRight(arr):
+  return vect_normSparseMatrixRight(arr)
+
+
+# sorteio_opt = theHellSorteio
+# sorteio_opt = theHellSorteio
+
+def toArray(data):
+  glb = globals()
+  if hasattr(data, 'toarray'):
+    glb['toArray'] = lambda x: x.toarray(x)
+  else:
+    glb['toArray'] = lambda x: np.array(x)
+  toArray = glb['toArray']
+  return toArray(data)
+
 
 # TODO : deixar apenas um vetor que representa Dx, atualizando
 class KMeansPP:
@@ -32,13 +101,20 @@ class KMeansPP:
   pelo algoritmo kmeans++.
 
   """
+
+
   def __init__(self, k, data: csr_matrix):
+    self.__spent_norm_diff = 0
     self.k = k
     if issparse(data) or isinstance(data, np.ndarray):
+      self.__toArray = lambda x: x.toarray() if hasattr(data[0], 'toarray') else lambda x: np.array(x)
       try:  # Sempre que pssível, usar arrays pois são absurdamente mas rápidos para operar sobre
-        self._data = data.toarray()
+        tmp = data.toarray()
+        tmp - toArray(tmp[0]) # testar se cabe na memória
+        self._data = tmp
         self.isSparse = False
-      except BaseException:
+      except BaseException as e:
+        print("Warning: sparse data", e)
         self._data = data
         self.isSparse = True
       self._dataLen = dataLen = data.shape[0]
@@ -74,10 +150,11 @@ class KMeansPP:
     """
     self._centroidsIndex[0] = randint(self._dataLen)
     self._computedCentroids += 1
-
   def __computeAndSetNextCentroidIndex(self):
+    t0 = time()
     """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
     lastIndex = self._centroidsIndex[self._computedCentroids-1]
+    # t0 = time()
     self._minDistanceToNearestCentroid = np.minimum(
       self._minDistanceToNearestCentroid,
       LA.norm(
@@ -85,18 +162,29 @@ class KMeansPP:
         axis = 1
       )
     )
+    self.__spent_norm_diff += (time() - t0)
+    # print("diffsized")
+    # print(f"Time: {dt1}")
+    # t0 = time()
     nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    # dt2 = time() - t0
+    # print(f"Time: {dt2}")
+    # raise BaseException(f"dt1: {dt1}, dt2: {dt2}")
+
+
     self._centroidsIndex[self._computedCentroids] = nextClusterIndex
     self._computedCentroids += 1
   def __computeAndSetNextCentroidIndex_Sparse(self):
     """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    t0 = time()
     self._minDistanceToNearestCentroid = np.minimum(
       self._minDistanceToNearestCentroid,
-      LA.norm(
-        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
-        axis = 1
+      getNormsOfSparseMatrixInsideArrayRight(
+        simple_sub_rev(self._data, [self._centroidsIndex[self._computedCentroids-1]])
       )
     )
+    print("(sub + norm) time : ", time() - t0)
+    # raise BaseException("fsdafafd")
     nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
     self._centroidsIndex[self._computedCentroids] = nextClusterIndex
     self._computedCentroids += 1
@@ -123,9 +211,14 @@ class KMeansPP:
       self.__InitCentroids()
     else:
       self.__InitCentroids_Sparse()
-
+    print("Total spent time on diff_norm: ", self.__spent_norm_diff)
+    return self
+  f = np.frompyfunc(lambda x: x.toarray(), 1, 1)
   def getCentroids(self):
-    return np.array([ self._data[i] for i in self._centroidsIndex ])
+    if self.isSparse:
+      return KMeansPP.f(self._data[self._centroidsIndex])
+    else:
+      return self._data[self._centroidsIndex]
   def getCentroidsIndex(self):
     return self._centroidsIndex
 def main():
@@ -133,3 +226,55 @@ def main():
 
 if __name__ == '__main__':
   main()
+
+
+k = 7
+
+# kmeanspp.KMeansPP(k, transformed_data)
+
+
+
+# quick_init = lambda k = 7: kmeanspp.KMeansPP(k, transformedData).fit().getCentroids()
+# def next(nome: str, results: dict, n=5, k = 7, init_mode=None, verbose=True):
+#   if not results.get(nome):
+#     results[nome] = []
+#   for i in range(n):
+#     results[nome].append( KMeans(n_clusters=k, init=quick_init(k) if not init_mode else init_mode, n_init=1, verbose=verbose) )
+#     results[nome][-1].fit(transformedData)
+
+# tests = [
+#   ('k-means++', 'k-means++'),
+#   ('caseiro', None),
+#   ('k-means', 'random'),
+# ]
+
+# def run_bateria(dic, to_test = tests, verbose=False):
+#   n, k = dic['meta']['n'], dic['meta']['k']
+#   for nome, init_mode in to_test:
+#     next(nome, dic, n=n, k=k, init_mode=init_mode, verbose=verbose)
+
+# def show_bateria(dic):
+#   print("meta: ", *dic['meta'])
+#   for k, v in dic.items():
+#     if k != 'meta':
+#       print(k)
+#       print(*sorted(map(lambda x: x.inertia_, v)))
+#       print(*map(lambda x: x.n_iter_, sorted(v, key=lambda x: x.inertia_)))
+
+# def run_and_dump(repeat, n_clusters, verbose=False, prefixo='bateria'):
+#   glb = globals()
+#   nome_da_bateria = f'{prefixo}{repeat}_{n_clusters}'
+#   d = glb[nome_da_bateria] = {}
+#   d['meta'] = {'n': n_clusters, 'k': repeat, 'step': 1}
+#   print(d['meta'])
+#   run_bateria(d, tests, verbose)
+#   print("dumped: ", nome_da_bateria)
+#   pickle.dump(d, open(nome_da_bateria, 'wb'))
+#   show_bateria(d)
+
+
+# def range_cluster_run_dump(repeat, n_min, n_max, stp, verbose=False):
+#   for n_cluster in range(n_min, n_max+1, stp):
+#     run_and_dump(repeat, n_cluster, verbose)
+
+# run_and_dump(1, 1)
