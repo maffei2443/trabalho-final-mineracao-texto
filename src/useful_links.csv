@@ -16,6 +16,8 @@ np.vectorize VS np.frompyfunc; © https://stackoverflow.com/questions/6768245/di
 sklearn.feature_extraction.text.CountVectorizer; para classificação dos textos levando em conta a quantidade de palavras por documento apenas © https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html#examples-using-sklearn-feature-extraction-text-countvectorizer
 pickle; serialização dos resultado. Não usado. © https://docs.python.org/3/library/pickle.html#pickle.dumps
 
+pyplot; gráficos © https://matplotlib.org/api/pyplot_api.html
+pyplot.plot; gráficos © https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.plot.html
 time; benchmark de tempo (menos preciso) © https://docs.python.org/3/library/time.html
 timeit; benchmark de tempo © https://docs.python.org/3.7/library/timeit.html
 

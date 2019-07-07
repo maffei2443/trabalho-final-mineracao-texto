@@ -221,6 +221,11 @@ class KMeansPP:
       return self._data[self._centroidsIndex]
   def getCentroidsIndex(self):
     return self._centroidsIndex
+
+class IncrementalKmeansPP(KMeansPP):
+  def __init__(self, *args):
+    super.__init__(*args)
+
 def main():
   pass
 

@@ -49,9 +49,10 @@ def StemmizePorter(text):
 engStopWords = stopwords.words("english")
 
 def pre_process_lower(text):
-    text = ToLowerCase(text);    print("==lower==> ", text)
-    text = StripAccents(text);    print("==no_accents==> ", text)
-    text = RemoveAllButAsciiLower(text);    print("==only_ascii==> ", text)
+    text = str.join(' ', text.split())
+    text = ToLowerCase(text);    #print("==lower==> ", text)
+    text = StripAccents(text);    #print("==no_accents==> ", text)
+    text = RemoveAllButAsciiLower(text);    #print("==only_ascii==> ", text)
     text = ' '.join( RemoveStopWords( text, engStopWords ))
     return text
 

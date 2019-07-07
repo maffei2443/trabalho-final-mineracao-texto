@@ -1,5 +1,6 @@
 import sys
 
+
 tests = [
     ('k-means++', 'k-means++'),
     ('caseiro', None),
@@ -40,11 +41,6 @@ def show_bateria(dic):
 def run_and_dump(repeat, n_clusters, verbose=False, prefixo='bateria'):
   global dirr
   glb = globals()
-  try:
-    os.mkdir(dirr)
-  except:
-      if 'n' in input('Diretorio exitente. Prosseguir mesmo assim?').lower():
-          return None
   nome_da_bateria = f'corrected_{repeat}rep_{n_clusters}nclust'
   d = glb[nome_da_bateria] = {}
 
@@ -52,7 +48,7 @@ def run_and_dump(repeat, n_clusters, verbose=False, prefixo='bateria'):
       'n_cluster': n_clusters,
       'repeat': repeat,
       'step': 1,
-      'categories': categories.copy(),
+      'categories': 'all',
       'subset': suset
     }
   print(d['meta'])
@@ -63,6 +59,11 @@ def run_and_dump(repeat, n_clusters, verbose=False, prefixo='bateria'):
 
 
 def range_cluster_run_dump(repeat, n_min, n_max, stp, verbose=False):
+  try:
+    os.mkdir(dirr)
+  except:
+      if 'n' in input('Diretorio exitente. Prosseguir mesmo assim?').lower():
+        return None
   for n_cluster in range(n_min, n_max+1, stp):
     run_and_dump(repeat, n_cluster, verbose)
 
@@ -78,7 +79,7 @@ def main():
     range_cluster_run_dump(rep, min_clust, max_clust, 1)
     # range_cluster_run_dump(1, 1, 1, 1)
 
-if __name__== '__main__' and len(sys.argv) == 5:
+if __name__== '__main__' and len(sys.argv) >= 5:
     import os
     import numpy as np
     import operator
@@ -107,11 +108,15 @@ if __name__== '__main__' and len(sys.argv) == 5:
 
     # suset = 'train' or 'all'
     suset = 'all' or 'train'
-    dataset = fetch_20newsgroups(subset=suset, categories=categories,
-                                shuffle=True, random_state=42)
-    transformedData = TfidfVectorizer().fit_transform(dataset.data)
+    dataset = fetch_20newsgroups(subset=suset, shuffle=True, random_state=42)
+    if len(sys.argv) > 5:
+      import pre_processor
+      print('PRE  PROCESSOR!!!')
+      transformedData = TfidfVectorizer().fit_transform( [pre_processor.pre_process_lower(x) for x in dataset.data] )
+    else:
+      transformedData = TfidfVectorizer().fit_transform(dataset.data)
     quick_init = lambda n_clusters = 7: kmeanspp.KMeansPP(n_clusters, transformedData).fit().getCentroids()
     main()
 
 else:
-    print("Should contain 5 args: repetitions, min_clust, max_clust e o diretório. Em caso de conflito de arquivo, será sobrescrito.")
+    print("Should contain 5+ args: repetitions, min_clust, max_clust e o diretório. Em caso de conflito de arquivo, será sobrescrito. Em caso de mais argumentos, usa pre_preocessor")

@@ -7,11 +7,11 @@ def to_csv_inertia(bat, tipo = tipo_inicializacao, dirr='csv/',precision=precisi
     o formato que cada chava leva para tuple(float, int), representando
     a inércia e a quantidade de clusters."""
     meta = bat['meta']
-    n, rep  = meta['n'], meta['k']
+    n_cluster, repeat  = meta['n_cluster'], meta['repeat']
     t0, t1, t2 = tipo
-    with open(f'{dirr}{rep}rep_{n}center_inertia.csv', 'w') as f:
+    with open(f'{dirr}{repeat}rep_{n_cluster}center_inertia.csv', 'w') as f:
         f.write(f'inertia_{t0}, inertia_{t1}, inertia_{t2}\n')
-        for (k, ca, kpp) in zip(bat[t0], bat[t1], bat[t2]):
+        for (k, ca, kpp) in zip(sorted(bat[t0]), sorted(bat[t1]), sorted(bat[t2])):
             f.write(f'{k[0]:.{precision}f}, {ca[0]:.{precision}f}, {kpp[0]:.{precision}f}\n')
 
 def to_csv_n_iter(bat, tipo = tipo_inicializacao, dirr='csv/', precision=precision):
@@ -19,11 +19,11 @@ def to_csv_n_iter(bat, tipo = tipo_inicializacao, dirr='csv/', precision=precisi
     o formato que cada chava leva para tuple(float, int), representando
     a inércia e a quantidade de clusters."""
     meta = bat['meta']
-    n, rep  = meta['n'], meta['k']
+    n_cluster, repeat  = meta['n_cluster'], meta['repeat']
     t0, t1, t2 = tipo
-    with open(f'{dirr}{rep}rep_{n}center_n_iter.csv', 'w') as f:
+    with open(f'{dirr}{repeat}rep_{n_cluster}center_n_iter.csv', 'w') as f:
         f.write(f'n_iter_{t0}, n_iter_{t1}, n_iter_{t2}\n')
-        for (k, ca, kpp) in zip(bat[t0], bat[t1], bat[t2]):
+        for (k, ca, kpp) in zip( sorted(bat[t0]), sorted(bat[t1]), sorted(bat[t2]) ):
             f.write(f'{k[1]}, {ca[1]}, {kpp[1]}\n')
 
 def to_csv_full(bat, tipo = tipo_inicializacao, dirr='csv/', precision=precision):
@@ -31,11 +31,11 @@ def to_csv_full(bat, tipo = tipo_inicializacao, dirr='csv/', precision=precision
     o formato que cada chava leva para tuple(float, int), representando
     a inércia e a quantidade de clusters."""
     meta = bat['meta']
-    n, rep  = meta['n'], meta['k']
+    n_cluster, repeat  = meta['n_cluster'], meta['repeat']
     t0, t1, t2 = tipo
-    with open(f'{dirr}{rep}rep_{n}center_full.csv', 'w') as f:
+    with open(f'{dirr}{repeat}rep_{n_cluster}center_full.csv', 'w') as f:
         f.write(f'inertia_{t0}, n_iter_{t0}, inertia_{t1}, n_iter_{t1},inertia_{t2}, n_iter_{t2}\n')
-        for (k, ca, kpp) in zip(bat[t0], bat[t1], bat[t2]):
+        for (k, ca, kpp) in zip( sorted(bat[t0]), sorted(bat[t1]), sorted(bat[t2]) ):
             f.write(f'{k[0]:.{precision}f}, {k[1]}, {ca[0]:.{precision}f}, {ca[1]}, {kpp[0]:.{precision}f}, {kpp[1]}\n')
 
 
@@ -72,8 +72,18 @@ def allBat2csv(k = 10, precision=3):
 
 # allBat2csv()
 
-def main():
+def main(min_clust, max_clust):
     allBat2csv()
 
 if __name__ == '__main__':
+    import sys
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('repetitions', help = 'Número de repetições de cada experimento.')
+    parser.add_argument('min_clust', help='Quantidade mínima de clusters a ser utiliazada nos experimentos.')
+    parser.add_argument('max_clust', help='Quantidade mínima de clusters a ser utiliazada nos experimentos.')
+    parser.add_argument('dirr', help='Diretório destino para salvar os resultados no formato CSV.')
+    parser.add_argument('--pre-processor', help='True for use pre_preprocessor.pre_processer_lower\n False otherwise')
+    parser.add_argument('--reduced', help='True se se quer usar todas as categorias. False para usar apenas 4.')
+    parser.parse_args()
     main()
