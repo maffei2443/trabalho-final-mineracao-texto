@@ -39,7 +39,7 @@ import pickle
 
 def sorteio_opt(probab_vet):
   return  np.searchsorted(
-        np.add.accumulate(probab_vet), rand() # Com 1.0, por conta de erro de precisao, muitas vezes dava erro
+        np.add.accumulate(probab_vet), rand()
       )
 
 def probab_choice(probab_vet, granularity = 1_000_000_000):
@@ -55,16 +55,6 @@ def probab_choice(probab_vet, granularity = 1_000_000_000):
 
 mu, sigma = 0, 0.5 
 s = np.random.normal(mu, sigma, 1000000) 
-
-def theHellSorteio(probab_vet):
-  i = s[randint(len(probab_vet))]
-  if i < 0:
-    i = -i
-  if i > 1:
-    i -= 1
-  return np.searchsorted(
-        np.add.accumulate(probab_vet), i # Com 1.0, por conta de erro de precisao, muitas vezes dava erro
-      )
 
 def simple_sub_rev(data, idx = 0):
     return [*data] - np.array([data[idx]])
@@ -91,8 +81,7 @@ def toArray(data):
     glb['toArray'] = lambda x: x.toarray(x)
   else:
     glb['toArray'] = lambda x: np.array(x)
-  toArray = glb['toArray']
-  return toArray(data)
+  return glb['toArray'](data)
 
 
 # TODO : deixar apenas um vetor que representa Dx, atualizando
@@ -109,8 +98,10 @@ class KMeansPP:
     if issparse(data) or isinstance(data, np.ndarray):
       self.__toArray = lambda x: x.toarray() if hasattr(data[0], 'toarray') else lambda x: np.array(x)
       try:  # Sempre que pssível, usar arrays pois são absurdamente mas rápidos para operar sobre
-        tmp = data.toarray()
-        tmp - toArray(tmp[0]) # testar se cabe na memória
+        if isinstance(data, np.ndarray):
+          tmp = data - np.array(tmp[0])
+        else:
+          tmp = data.toarray() - np.array(tmp[0])
         self._data = tmp
         self.isSparse = False
       except BaseException as e:
@@ -168,6 +159,7 @@ class KMeansPP:
     # t0 = time()
     nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
     # dt2 = time() - t0
+    
     # print(f"Time: {dt2}")
     # raise BaseException(f"dt1: {dt1}, dt2: {dt2}")
 
@@ -221,6 +213,209 @@ class KMeansPP:
       return self._data[self._centroidsIndex]
   def getCentroidsIndex(self):
     return self._centroidsIndex
+
+class Old:
+  def __init__(self, k, data: scipy.sparse.csr.csr_matrix):
+    self.k = k
+    self.isSparse = False
+    if isinstance(data, scipy.sparse.csr.csr_matrix):
+      try:  # Sempre que pssível, usar arrays pois são absurdamente mas rápidos para operar sobre
+        self._data = data.toarray()
+        self.isSparse = False
+      except BaseException:
+        self._data = data
+        self.isSparse = True
+      self._dataLen = dataLen = data.shape[0]
+
+    else:
+      self._data = np.array(data)
+      self._dataLen = dataLen = len(data)
+      self.isSparse = False
+    self._centroidsIndex = np.zeros( k, dtype=np.uint16 )
+    self._computedCentroids = 0
+    self._probab = np.full( (k, dataLen), -np.inf )
+    self._minDistanceToNearestCentroid = np.full( (1, dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
+  def __reset(self, k, data=None):
+    data = self._data if not data else data
+    self.__init__(k, data)    
+  def __distDebug(self):
+    print("LastIndex: ", self._centroidsIndex[self._computedCentroids-1])
+    print("distancia: ", self._minDistanceToNearestCentroid)
+    print("candidato: ", LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      ))
+
+  def __computeAndSetFirstCentroid(self):
+    """Sorteia um número no inervalo [0, tamanho(vetor_de_dados) e seta o primeiro centróide para tal.
+    
+    Como efeito colateral, altera o contador de centróides computados, bem como
+    modifica os arrays de índices de centróides e de centróides.
+    """
+    self._centroidsIndex[0] = randint(self._dataLen)
+    self._computedCentroids += 1
+
+  def __computeAndSetNextCentroidIndex(self):
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    self._minDistanceToNearestCentroid = np.minimum(
+      self._minDistanceToNearestCentroid,
+      LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      )
+    )
+    nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    self._centroidsIndex[self._computedCentroids] = nextClusterIndex
+    self._computedCentroids += 1
+  def __computeAndSetNextCentroidIndex_Sparse(self):
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    self._minDistanceToNearestCentroid = np.minimum(
+      self._minDistanceToNearestCentroid,
+      LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      )
+    )
+    nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    self._centroidsIndex[self._computedCentroids] = nextClusterIndex
+    self._computedCentroids += 1
+
+  def __InitCentroids(self):
+    # print("__InitCentroids")
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for _ in range(1,self.k):
+      self.__computeAndSetNextCentroidIndex()
+  def __InitCentroids_Sparse(self):
+    # print("__InitCentroids")
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for _ in range(1,self.k):
+      self.__computeAndSetNextCentroidIndex_Sparse()
+
+  def fit(self):
+    if not self.isSparse:
+      self.__InitCentroids()
+    else:
+      self.__InitCentroids_Sparse()
+    return self
+  def UnFit(self):
+    self._centroidsIndex = np.zeros( self.k, dtype=np.uint16 )
+    self._computedCentroids = 0
+    self._probab = np.full( (self.k, self._dataLen), -np.inf )
+    self._minDistanceToNearestCentroid = np.full( (1, self._dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
+
+  def getCentroids(self):
+    return np.array([ self._data[i] for i in self._centroidsIndex ])
+
+  def getCentroidsIndex(self):
+    return self._centroidsIndex
+
+class LastTry:
+  def __init__(self, k, data: scipy.sparse.csr.csr_matrix):
+    self.k = k
+    self.isSparse = False
+    if isinstance(data, scipy.sparse.csr.csr_matrix):
+      try:  # Sempre que pssível, usar arrays pois são absurdamente mas rápidos para operar sobre
+        self._data = data.toarray()
+        self.isSparse = False
+      except BaseException:
+        self._data = data
+        self.isSparse = True
+      self._dataLen = dataLen = data.shape[0]
+
+    else:
+      self._data = np.array(data)
+      self._dataLen = dataLen = len(data)
+      self.isSparse = False
+    self._centroidsIndex = np.zeros( k, dtype=np.uint16 )
+    self._computedCentroids = 0
+    self._probab = np.full( (k, dataLen), -np.inf )
+    self._minDistanceToNearestCentroid = np.full( (1, dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
+  def __reset(self, k, data=None):
+    data = self._data if not data else data
+    self.__init__(k, data)    
+  def __distDebug(self):
+    print("LastIndex: ", self._centroidsIndex[self._computedCentroids-1])
+    print("distancia: ", self._minDistanceToNearestCentroid)
+    print("candidato: ", LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      ))
+
+  def __computeAndSetFirstCentroid(self):
+    """Sorteia um número no inervalo [0, tamanho(vetor_de_dados) e seta o primeiro centróide para tal.
+    
+    Como efeito colateral, altera o contador de centróides computados, bem como
+    modifica os arrays de índices de centróides e de centróides.
+    """
+    self._centroidsIndex[0] = randint(self._dataLen)
+    self._computedCentroids += 1
+
+  def __computeAndSetNextCentroidIndex(self):
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    self._minDistanceToNearestCentroid = np.minimum(
+      self._minDistanceToNearestCentroid,
+      LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      )
+    )
+    nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    self._centroidsIndex[self._computedCentroids] = nextClusterIndex
+    self._computedCentroids += 1
+  def __computeAndSetNextCentroidIndex_Sparse(self):
+    """Retorna o índice do próximo centro de um cluster, seguindo a descrição do k-means++."""
+    self._minDistanceToNearestCentroid = np.minimum(
+      self._minDistanceToNearestCentroid,
+      LA.norm(
+        self._data - self._data[self._centroidsIndex[self._computedCentroids-1]],
+        axis = 1
+      )
+    )
+    nextClusterIndex = sorteio_opt( (self._minDistanceToNearestCentroid / np.sum(self._minDistanceToNearestCentroid))[0] )
+    self._centroidsIndex[self._computedCentroids] = nextClusterIndex
+    self._computedCentroids += 1
+
+  def __InitCentroids(self):
+    # print("__InitCentroids")
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for _ in range(1,self.k):
+      self.__computeAndSetNextCentroidIndex()
+  def __InitCentroids_Sparse(self):
+    # print("__InitCentroids")
+    """Seta a lista de centroids iniciais utilizando o procedimento descrito no artigo original do k-means++.
+    """
+    self.__computeAndSetFirstCentroid()
+    # Generate the others centroids
+    for _ in range(1,self.k):
+      self.__computeAndSetNextCentroidIndex_Sparse()
+
+  def fit(self):
+    if not self.isSparse:
+      self.__InitCentroids()
+    else:
+      self.__InitCentroids_Sparse()
+    return self
+  def UnFit(self):
+    self._centroidsIndex = np.zeros( self.k, dtype=np.uint16 )
+    self._computedCentroids = 0
+    self._probab = np.full( (self.k, self._dataLen), -np.inf )
+    self._minDistanceToNearestCentroid = np.full( (1, self._dataLen), np.inf, dtype=np.float64 ) # ditancias até qqer centroid inicialmente é infinita
+
+  def getCentroids(self):
+    return np.array([ self._data[i] for i in self._centroidsIndex ])
+
+  def getCentroidsIndex(self):
+    return self._centroidsIndex
+
 
 class IncrementalKmeansPP(KMeansPP):
   def __init__(self, *args):
