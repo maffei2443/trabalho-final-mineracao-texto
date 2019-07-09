@@ -1,6 +1,17 @@
 from scipy.sparse import csr_matrix
 from matplotlib import pyplot as plt
 
+map_rename = {
+    'inertia_k-means++': 'kmpp_inercia',
+    ' n_iter_k-means++': 'kmpp_iter',
+    ' inertia_caseiro': 'new_inercia',
+    ' n_iter_caseiro': 'new_iter',
+    'inertia_k-means': 'rand_inercia',
+    ' n_iter_k-means': 'rand_iter',
+}
+
+DIRR = 'RESULTS_OK/'
+
 def ShowOrderedDictList(d, option = 'values', smallTime = False):
     items = d.items() if not smallTime else [(k, [min(v)]) for k, v in d.items() if smallTime and option]
     if option == 'values':
@@ -53,11 +64,14 @@ def MyPlot(title, dic, colors=['#ff0000', '#00ff00', '#0000ff'],
     dpi=300,
     xlabel = 'xlabel',
     ylabel='ylabel',
-    top=0.99,
-    bottom=0.0):
+    top=0.95,
+    bottom=0.1,
+    dirr='RESULTS_OK/'):
+    global DIRR
     if not linestyle:
         linestyle = []
     keys = list( dic.keys() )
+    # 
     if not title:
         top = 0.99
     if 'n_samples' in keys:
@@ -65,9 +79,11 @@ def MyPlot(title, dic, colors=['#ff0000', '#00ff00', '#0000ff'],
     else:  # Informar qual o range em dic
         dic['n_samples'] = range(len( dic[keys[0]] ))
     assert 'n_samples' in dic
+    n_samples = dic['n_samples']
+    print("n_samples: ", dic['n_samples'])
     plt.figure(title, dpi=dpi)
     plt.title(title)
-    plt.xlabel(xlabel, fontsize='x-small')
+    plt.xlabel(xlabel, fontsize='large')
     plt.ylabel(ylabel, fontsize='large')
     plt.subplots_adjust(top=top, bottom=bottom)
     for i, col in enumerate(keys):
@@ -79,11 +95,15 @@ def MyPlot(title, dic, colors=['#ff0000', '#00ff00', '#0000ff'],
     plt.legend(keys)
     return title
 
+# def Iteracoes_Inercia(dic):
+
+
 def PlotDictInertia(dic, linestyle=[]):
     title = MyPlot('Inertia', dic, 
         xlabel='Tentativas (fora de ordem)', ylabel='Inércia', linestyle=linestyle)
     plt.show()
     plt.close(title)
+
 def ls2dict(ls,  cvt=float): 
     cp = [i.strip() for i in ls]      
     keys = [i.strip() for i in cp[0].strip().split(',')] 
